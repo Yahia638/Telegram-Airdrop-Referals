@@ -1,16 +1,17 @@
 <?php
 error_reporting(E_ALL);
 ini_set("display_errors", 1);
+
 require "vendor/autoload.php";
 use Telegram\Bot\Api;
 
-$botToken = "BOT_API_HERE;
+$botToken = "BOT_API_HERE"; //add your telegram API
 $bot = new Api($botToken);
 
 $host = "localhost";
 $dbname = "lottox";
 $user = "lottox";
-$password = "PassWord";
+$password = "clPENVSp5pr2b5j";
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname", $user, $password);
@@ -20,7 +21,7 @@ try {
 }
 
 try {
-    $bot->setWebhook(["url" => "https://lottox.site/index.php"]);
+    $bot->setWebhook(["url" => "https://turanswap.com/index.php"]); //change turanswap.com to your website name 
 } catch (Exception $e) {
     error_log("Webhook setup error: " . $e->getMessage());
 }
@@ -96,6 +97,7 @@ if ($callbackQuery) {
         ]);
     }
 }
+
 if ($message) {
     $chatId = $message["chat"]["id"];
     $text = $message["text"];
@@ -138,24 +140,59 @@ if ($message) {
                 }
             }
         }
-        $referralLink = "https://t.me/lottixbot?start=$chatId";
+
+        $referralLink = "https://t.me/lottixbot?start=$chatId";  //change lottixbot to your bot name  
         $keyboard = [
-            "inline_keyboard" => [
-                [
-                    ["text" => "🎉 Claim Points", "callback_data" => "claim"],
-                    ["text" => "🏆 View Top Users", "callback_data" => "top"],
-                ],
-            ],
+    "inline_keyboard" => [
+        [
+            ["text" => "🎉 Claim TURAN", "callback_data" => "claim"],
+            ["text" => "🏆 Leaderboard", "callback_data" => "top"],
+        ],
+        [
+            ["text" => "💰 Check Balance", "callback_data" => "balance"],
+            ["text" => "🔄 Change Wallet", "callback_data" => "change_wallet"],
+        ],
+        [
+            ["text" => "📱 Join Channel", "url" => "https://t.me/turannetwork"],
+            ["text" => "🐦 Join Twitter", "url" => "https://x.com/turan_network"],
+        ],
+        [
+            ["text" => "TURAN | SWAP", "url" => "https://turanswap.com"], 
+        ],
+        [
+            ["text" => "📋 Copy Referral Link", "callback_data" => "copy_referral_link"], 
+        ],
+    ],
+];
+
+        $photoPath = "loogo.jpg";
+
+        $paramsPhoto = [
+            "chat_id" => $chatId,
+            "photo" => new CURLFile($photoPath),
         ];
-        $messageText = "
-    🎉 <b>Welcome to LottoX Bot!</b> 🎉
 
-    You can invite your friends using the referral link below. Earn 10 TURAN when they sign up and participate!
+        $ch = curl_init();
+        curl_setopt(
+            $ch,
+            CURLOPT_URL,
+            "https://api.telegram.org/bot" . $botToken . "/sendPhoto"
+        );
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $paramsPhoto);
+        $responsePhoto = curl_exec($ch);
+        curl_close($ch);
 
-    <i>Your referral link: $referralLink</i>
+$messageText = "
+🎉 <b>Welcome to LottoX Bot!</b> 🎉
+You can invite your friends and earn 10 TURAN when they sign up and participate!
+💰 <b>TURAN</b> is a special token used within the LottoX platform, and you can use it for various rewards and actions.
+🔄 We are also working on a <b>Polygon (MATIC) swap</b>, where you can easily exchange your TURAN tokens for Polygon tokens or vice versa.
+🚀 <b>Invite as many friends as you can</b> and maximize your TURAN earnings!
+<b>Start participating and enjoy the benefits!</b>
+";
 
-    🚀 <b>Invite as many friends as you can!</b>
-    ";
         $bot->sendMessage([
             "chat_id" => $chatId,
             "text" => $messageText,
@@ -163,8 +200,9 @@ if ($message) {
             "reply_markup" => json_encode($keyboard),
         ]);
     }
+
     elseif ($text === "/generate") {
-        $referralLink = "https://t.me/lottixbot?start=$chatId";
+        $referralLink = "https://t.me/lottixbot?start=$chatId"; //change lottixbot to your bot name 
         $bot->sendMessage([
             "chat_id" => $chatId,
             "text" => "Your referral link: $referralLink",
@@ -197,6 +235,7 @@ if ($message) {
             "parse_mode" => "HTML",
         ]);
     }
+
     elseif (preg_match('/^0x[a-fA-F0-9]{40}$/', $text)) {
         $stmt = $pdo->prepare(
             "UPDATE users SET wallet_address = :wallet_address WHERE chat_id = :chat_id"
@@ -215,5 +254,46 @@ if ($message) {
                 "Sorry, I didn't understand that command. Try /start, /generate, /top, or provide your wallet address.",
         ]);
     }
+} elseif ($callbackData === "balance") {
+    $stmt = $pdo->prepare("SELECT points FROM users WHERE chat_id = :chat_id");
+    $stmt->execute(["chat_id" => $chatId]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($user) {
+        $balance = $user["points"];
+        $bot->sendMessage([
+            "chat_id" => $chatId,
+            "text" => "💰 Your current balance is: $balance TURAN.",
+        ]);
+    } else {
+        $bot->sendMessage([
+            "chat_id" => $chatId,
+            "text" =>
+                "❌ Could not fetch your balance. Please register first using /start.",
+        ]);
+    }
+} elseif ($callbackData === "change_wallet") {
+    $bot->sendMessage([
+        "chat_id" => $chatId,
+        "text" => "🔄 Please send your new Polygon wallet address.",
+    ]);
+} elseif (preg_match('/^0x[a-fA-F0-9]{40}$/', $text)) {
+    $stmt = $pdo->prepare(
+        "UPDATE users SET wallet_address = :wallet_address WHERE chat_id = :chat_id"
+    );
+    $stmt->execute(["wallet_address" => $text, "chat_id" => $chatId]);
+
+    $bot->sendMessage([
+        "chat_id" => $chatId,
+        "text" => "✅ Your wallet address has been updated successfully!",
+    ]);
+}
+if ($callbackData === "copy_referral_link") {
+    $referralLink = "https://t.me/lottixbot?start=$chatId"; //change lottixbot to your bot name 
+    $bot->sendMessage([
+        "chat_id" => $chatId,
+        "text" => "📋 Here's your referral link:\n\n<i>$referralLink</i>\n\nYou can copy and share it with your friends!",
+        "parse_mode" => "HTML",
+    ]);
 }
 ?>
