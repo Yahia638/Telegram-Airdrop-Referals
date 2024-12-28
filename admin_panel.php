@@ -14,6 +14,7 @@ try {
     echo "Connection failed: " . $e->getMessage();
     exit();
 }
+
 if (!isset($_SESSION['admin_id'])) {
     die("Access denied. You must be logged in as an admin.");
 }
@@ -21,7 +22,7 @@ if (!isset($_SESSION['admin_id'])) {
 if (isset($_POST['action']) && isset($_POST['id']) && isset($_POST['points'])) {
     $user_id = $_POST['id'];
     $action = $_POST['action'];
-    $points = (int)$_POST['points']; 
+    $points = (int)$_POST['points'];
 
     if ($action == 'add_points' && $points > 0) {
         $stmt = $pdo->prepare("UPDATE users SET points = points + :points WHERE id = :id");
@@ -39,16 +40,23 @@ if (isset($_POST['action']) && isset($_POST['id']) && isset($_POST['points'])) {
 $sql = "SELECT id, username, points, wallet_address FROM users";
 $stmt = $pdo->query($sql);
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$total_points_sql = "SELECT SUM(points) AS total_points FROM users";
+$total_points_stmt = $pdo->query($total_points_sql);
+$total_points = $total_points_stmt->fetch(PDO::FETCH_ASSOC)['total_points'];
+
+$total_users_sql = "SELECT COUNT(id) AS total_users FROM users";
+$total_users_stmt = $pdo->query($total_users_sql);
+$total_users = $total_users_stmt->fetch(PDO::FETCH_ASSOC)['total_users'];
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel</title>
-    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="style.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -56,7 +64,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
             margin: 0;
             padding: 20px;
         }
-        h2 {
+        h2, h3 {
             color: #333;
         }
         table {
@@ -73,6 +81,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         th {
             background-color: #000000;
+            color: #fff;
         }
         a {
             text-decoration: none;
@@ -86,6 +95,9 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body>
 
     <h2>User Management</h2>
+    <h3>Total Points: <?php echo $total_points; ?></h3>
+    <h3>Total Users: <?php echo $total_users; ?></h3>
+
     <table>
         <tr>
             <th>ID</th>
