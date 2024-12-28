@@ -13,7 +13,7 @@ This is a Telegram bot for managing LottoX users, claiming points, and referring
 
 ## Prerequisites
 
-- PHP 7.4 or higher
+- PHP 8.2 or higher
 - Composer
 - MySQL database
 
