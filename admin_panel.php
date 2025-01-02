@@ -19,6 +19,35 @@ if (!isset($_SESSION['admin_id'])) {
     die("Access denied. You must be logged in as an admin.");
 }
 
+if (isset($_POST['send_message']) && !empty($_POST['message'])) {
+    $message = $_POST['message'];
+    $stmt = $pdo->query("SELECT chat_id FROM users WHERE chat_id IS NOT NULL");
+    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($users as $user) {
+        $chat_id = $user['chat_id'];
+        $bot_token = 'Your_Bot_API'; // add your bot api here
+        $url = "https://api.telegram.org/bot$bot_token/sendMessage";
+        $data = [
+            'chat_id' => $chat_id,
+            'text' => $message
+        ];
+
+        $options = [
+            'http' => [
+                'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+                'method'  => 'POST',
+                'content' => http_build_query($data)
+            ]
+        ];
+
+        $context = stream_context_create($options);
+        file_get_contents($url, false, $context);
+    }
+
+    echo "Message sent to all users!";
+}
+
 if (isset($_POST['action']) && isset($_POST['id']) && isset($_POST['points'])) {
     $user_id = $_POST['id'];
     $action = $_POST['action'];
@@ -97,7 +126,12 @@ $total_users = $total_users_stmt->fetch(PDO::FETCH_ASSOC)['total_users'];
     <h2>User Management</h2>
     <h3>Total Points: <?php echo $total_points; ?></h3>
     <h3>Total Users: <?php echo $total_users; ?></h3>
-
+	<h2>Send Message to All Users</h2>
+	<form method="POST" action="admin_panel.php">
+    <textarea name="message" rows="4" cols="50" placeholder="Type your message here..." required></textarea>
+    <br>
+    <button type="submit" name="send_message">Send Message</button>
+	</form>
     <table>
         <tr>
             <th>ID</th>
